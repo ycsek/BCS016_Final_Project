@@ -1,14 +1,3 @@
-"""
-Author: Jason
-E-mail: D23090120503@cityu.edu.mo
-LastEditTime: 2025-04-25 14:10:11
-"""
-
-"""
-Author: Jason
-E-mail: D23090120503@cityu.edu.mo
-LastEditTime: 2025-04-25 13:34:50
-"""
 
 import pymysql
 import sys

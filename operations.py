@@ -1,19 +1,32 @@
-"""
-Author: Jason
-E-mail: D23090120503@cityu.edu.mo
-LastEditTime: 2025-04-25 13:31:51
-"""
 
 from database import execute_query
 from ui import get_input, display_table, confirm_action, display_message
 from datetime import date, timedelta
 from auth import register_user
 
+
+# --- Permission Helper ---
+def has_permission(user_permissions, required_permission):
+    """Checks if the user has the required permission."""
+    # Superadmin implicitly has all permissions (checked in calling function)
+    if not user_permissions:  # Handles None or empty string for regular admins
+        return False
+    perms_list = [p.strip() for p in user_permissions.split(",")]
+    return required_permission in perms_list
+
+
 # --- Book Operations ---
 
 
-def add_book():
+def add_book(current_user):
     """Adds a new book to the database."""
+    # Permission Check
+    if current_user["role"] != "superadmin" and not has_permission(
+        current_user.get("permissions"), "add_book"
+    ):
+        display_message("Permission denied: Requires 'add_book' permission.", "error")
+        return
+
     print("\n--- Add New Book ---")
     title = get_input("Enter title", required=True)
     if title is None:
@@ -54,8 +67,17 @@ def add_book():
         display_message("Failed to add book.", "error")
 
 
-def update_book():
+def update_book(current_user):
     """Updates an existing book's details."""
+    # Permission Check
+    if current_user["role"] != "superadmin" and not has_permission(
+        current_user.get("permissions"), "update_book"
+    ):
+        display_message(
+            "Permission denied: Requires 'update_book' permission.", "error"
+        )
+        return
+
     print("\n--- Update Book ---")
     book_id = get_input(
         "Enter the ID of the book to update", required=True, input_type=int
@@ -148,8 +170,17 @@ def update_book():
         display_message("Update cancelled.", "info")
 
 
-def delete_book():
+def delete_book(current_user):
     """Deletes a book from the database."""
+    # Permission Check
+    if current_user["role"] != "superadmin" and not has_permission(
+        current_user.get("permissions"), "delete_book"
+    ):
+        display_message(
+            "Permission denied: Requires 'delete_book' permission.", "error"
+        )
+        return
+
     print("\n--- Delete Book ---")
     book_id = get_input(
         "Enter the ID of the book to delete", required=True, input_type=int
@@ -295,7 +326,6 @@ def borrow_book(user_id):
         WHERE book_id = %s AND available_quantity > 0
     """
 
-
     loan_id = execute_query(
         loan_query, (user_id, book_id, loan_date, due_date), commit=True
     )
@@ -396,8 +426,17 @@ def list_user_loans(user_id, only_active=False):
 # --- Admin Only Operations ---
 
 
-def list_all_loans(only_active=False):
-    """Lists all loans (Admin only)."""
+def list_all_loans(current_user, only_active=False):
+    """Lists all loans (Admin/Superadmin only). Requires 'view_reports' permission for Admin."""
+    # Permission Check
+    if current_user["role"] != "superadmin" and not has_permission(
+        current_user.get("permissions"), "view_reports"
+    ):
+        display_message(
+            "Permission denied: Requires 'view_reports' permission.", "error"
+        )
+        return
+
     print("\n--- All Library Loans ---")
     query = """
         SELECT l.loan_id, u.username, b.title, l.loan_date, l.due_date, l.return_date
@@ -434,8 +473,14 @@ def list_all_loans(only_active=False):
         display_message(f"There are no {status} loans in the system.", "info")
 
 
-def add_user():
-    """Adds a new user (Admin only)."""
+def add_user(current_user):
+    """Adds a new user (Admin/Superadmin only). Requires 'add_user' permission for Admin."""
+    # Permission Check
+    if current_user["role"] != "superadmin" and not has_permission(
+        current_user.get("permissions"), "add_user"
+    ):
+        display_message("Permission denied: Requires 'add_user' permission.", "error")
+        return
 
     print("\n--- Add New User ---")
     username = get_input("Enter username for new user", required=True)
@@ -447,14 +492,20 @@ def add_user():
     if password is None:
         return
     role = get_input("Enter role ('reader' or 'admin')", required=True).lower()
+    if role == "superadmin" and current_user["role"] != "superadmin":
+        display_message("Only superadmin can create other superadmins.", "error")
+        return
+    if role == "admin" and current_user["role"] != "superadmin":
+        # Allow admins with 'add_user' to create readers, but not other admins
+        display_message("Only superadmin can create admin users.", "error")
+        return
+
     if role not in ["reader", "admin"]:
         display_message("Invalid role. Must be 'reader' or 'admin'.", "error")
         return
     # Get phone number (optional)
     phone = get_input("Enter phone number (optional)", required=False)
-    if (
-        phone is None and phone != ""
-    ):
+    if phone is None and phone != "":
         return  # User cancelled during phone input
 
     register_user(
@@ -462,8 +513,17 @@ def add_user():
     )  # Pass None if empty string
 
 
-def list_users():
-    """Lists all users (Admin only)."""
+def list_users(current_user):
+    """Lists all users (Admin/Superadmin only). Requires 'view_reports' permission for Admin."""
+    # Permission Check
+    if current_user["role"] != "superadmin" and not has_permission(
+        current_user.get("permissions"), "view_reports"
+    ):
+        display_message(
+            "Permission denied: Requires 'view_reports' permission.", "error"
+        )
+        return
+
     print("\n--- All Users ---")
     # Updated query to select phone
     query = (
@@ -484,8 +544,17 @@ def list_users():
         display_message("No users found in the system.", "info")
 
 
-def update_user():
-    """Updates an existing user's details (Admin only)."""
+def update_user(current_user):
+    """Updates an existing user's details (Admin/Superadmin only). Requires 'update_user' permission for Admin."""
+    # Permission Check
+    if current_user["role"] != "superadmin" and not has_permission(
+        current_user.get("permissions"), "update_user"
+    ):
+        display_message(
+            "Permission denied: Requires 'update_user' permission.", "error"
+        )
+        return
+
     print("\n--- Update User ---")
     user_id = get_input(
         "Enter the ID of the user to update", required=True, input_type=int
@@ -494,17 +563,41 @@ def update_user():
         return
 
     # Fetch current details
-    current_user = execute_query(
-        "SELECT user_id, username, role, phone FROM users WHERE user_id = %s",
+    target_user = execute_query(
+        "SELECT user_id, username, role, phone, permissions FROM users WHERE user_id = %s",
         (user_id,),
         fetch_one=True,
     )
-    if not current_user:
+
+    if not target_user:
         display_message(f"User with ID {user_id} not found.", "error")
         return
 
+    # Prevent non-superadmins from modifying superadmins or other admins
+    if (
+        target_user.get("role") in ["superadmin", "admin"]
+        and current_user["role"] != "superadmin"
+    ):
+        display_message(
+            "Only superadmin can modify admin or superadmin users.", "error"
+        )
+        return
+    # Prevent self-modification for non-superadmins (optional, good practice)
+    if (
+        target_user.get("user_id") == current_user.get("user_id")
+        and current_user["role"] != "superadmin"
+    ):
+        display_message(
+            "Admins cannot modify their own account. Contact superadmin.", "error"
+        )
+        return
+
     display_message("Current details:")
-    display_table([current_user])
+    # Display permissions as well
+    display_table(
+        [{k: v for k, v in target_user.items() if k != "permissions"}]
+    )  # Hide raw permissions string initially
+    display_message(f"Current permissions: {target_user.get('permissions') or 'None'}")
 
     username = (
         get_input(
@@ -513,30 +606,56 @@ def update_user():
         )
         or current_user["username"]
     )
-    role_input = get_input(
-        f"Enter new role ('reader' or 'admin', leave blank to keep '{current_user['role']}')",
-        required=False,
-    )
-    role = role_input.lower() if role_input else current_user["role"]
-    if role not in ["reader", "admin"]:
-        display_message("Invalid role. Must be 'reader' or 'admin'.", "error")
+
+    # Role change only by superadmin
+    new_role = target_user["role"]
+    if current_user["role"] == "superadmin":
+        role_input = get_input(
+            f"Enter new role ('reader' or 'admin', leave blank to keep '{target_user['role']}')",
+            required=False,
+        )
+        if role_input:
+            new_role = role_input.lower()
+            if new_role not in ["reader", "admin"]:
+                display_message("Invalid role. Must be 'reader' or 'admin'.", "error")
+                return
+            if new_role == "superadmin":  # Prevent creating more superadmins this way
+                display_message("Cannot assign 'superadmin' role via update.", "error")
+                return
+    elif (
+        target_user["role"] != "reader"
+    ):  # Non-superadmin cannot change role of non-readers
+        display_message("Only superadmin can change admin roles.", "error")
         return
 
+    # Clear permissions if role changes from admin/superadmin to reader
+    new_permissions = target_user.get("permissions", "")
+    if new_role == "reader" and target_user["role"] != "reader":
+        new_permissions = ""
+        display_message(
+            "Permissions will be cleared as role is changing to reader.", "info"
+        )
+    # Permissions can only be set via assign_permissions or assign_role_permissions by superadmin
+
     phone_input = get_input(
-        f"Enter new phone (leave blank to keep '{current_user.get('phone') or 'N/A'}')",
+        f"Enter new phone (leave blank to keep '{target_user.get('phone') or 'N/A'}')",
         required=False,
     )
-    if phone_input is None:
-        return
-    new_phone = phone_input or current_user.get("phone")
+    if phone_input is None and phone_input != "":  # Allow clearing phone
+        return  # User cancelled
+    new_phone = phone_input if phone_input is not None else target_user.get("phone")
 
     if confirm_action(f"Update user ID {user_id}?"):
         query = """
             UPDATE users
-            SET username = %s, role = %s, phone = %s
+            SET username = %s, role = %s, phone = %s, permissions = %s
             WHERE user_id = %s
         """
-        execute_query(query, (username, role, new_phone, user_id), commit=True)
+        execute_query(
+            query,
+            (username, new_role, new_phone, new_permissions, user_id),
+            commit=True,
+        )
         display_message(f"User ID {user_id} updated successfully.", "success")
         # Re-fetch and display updated details
         updated_user = execute_query(
@@ -554,8 +673,17 @@ def update_user():
         display_message("Update cancelled.", "info")
 
 
-def delete_user():
-    """Deletes a user (Admin only)."""
+def delete_user(current_user):
+    """Deletes a user (Admin/Superadmin only). Requires 'delete_user' permission for Admin."""
+    # Permission Check
+    if current_user["role"] != "superadmin" and not has_permission(
+        current_user.get("permissions"), "delete_user"
+    ):
+        display_message(
+            "Permission denied: Requires 'delete_user' permission.", "error"
+        )
+        return
+
     print("\n--- Delete User ---")
     user_id = get_input(
         "Enter the ID of the user to delete", required=True, input_type=int
@@ -564,11 +692,27 @@ def delete_user():
         return
 
     # Fetch user
-    user = execute_query(
-        "SELECT username FROM users WHERE user_id = %s", (user_id,), fetch_one=True
+    target_user = execute_query(
+        "SELECT username, role FROM users WHERE user_id = %s",
+        (user_id,),
+        fetch_one=True,
     )
-    if not user:
+    if not target_user:
         display_message(f"User with ID {user_id} not found.", "error")
+        return
+
+    # Prevent non-superadmins from deleting superadmins or admins
+    if (
+        target_user.get("role") in ["superadmin", "admin"]
+        and current_user["role"] != "superadmin"
+    ):
+        display_message(
+            "Only superadmin can delete admin or superadmin users.", "error"
+        )
+        return
+    # Prevent self-deletion (optional)
+    if target_user.get("user_id") == current_user.get("user_id"):
+        display_message("Cannot delete your own account.", "error")
         return
 
     # Check for active loans
@@ -582,7 +726,7 @@ def delete_user():
         return
 
     if confirm_action(
-        f"Delete user '{user['username']}' (ID: {user_id})? This is irreversible."
+        f"Delete user '{target_user['username']}' (ID: {user_id})? This is irreversible."
     ):
         execute_query("DELETE FROM users WHERE user_id = %s", (user_id,), commit=True)
         # Verify deletion
@@ -595,3 +739,192 @@ def delete_user():
             display_message(f"Failed to delete user ID {user_id}.", "error")
     else:
         display_message("Deletion cancelled.", "info")
+
+
+# --- Superadmin Only Operations ---
+
+
+def assign_role(current_user):
+    """Assigns or revokes admin role for a user (Superadmin only)."""
+    # Superadmin Check
+    if current_user["role"] != "superadmin":
+        display_message("Permission denied: Only superadmin can manage roles.", "error")
+        return
+
+    print("\n--- Manage User Roles (Superadmin) ---")
+    user_id = get_input(
+        "Enter the ID of the user to modify", required=True, input_type=int
+    )
+    if user_id is None:
+        return
+    # Fetch current details
+    user = execute_query(
+        "SELECT username, role FROM users WHERE user_id = %s",
+        (user_id,),
+        fetch_one=True,
+    )
+    if not user:
+        display_message(f"User with ID {user_id} not found.", "error")
+        return
+    if user.get("role") == "superadmin":
+        display_message("Cannot modify superadmin role.", "error")
+        return
+    display_message(f"Current role for '{user['username']}': {user['role']}")
+    new_role = get_input("Enter new role ('reader' or 'admin')", required=True).lower()
+    if new_role not in ["reader", "admin"]:
+        display_message("Invalid role. Must be 'reader' or 'admin'.", "error")
+        return
+    if confirm_action(f"Change role for '{user['username']}' to '{new_role}'?"):
+        # Update role and reset permissions when role changes
+        execute_query(
+            "UPDATE users SET role = %s, permissions = %s WHERE user_id = %s",
+            (
+                new_role,
+                "",
+                user_id,
+            ),  # Always clear permissions on role change via this function
+            commit=True,
+        )
+        display_message(
+            f"User ID {user_id} role changed to '{new_role}' and permissions cleared.",
+            "success",
+        )
+
+
+def assign_permissions(current_user):
+    """Assigns permissions to an admin user (Superadmin only)."""
+    # Superadmin Check
+    if current_user["role"] != "superadmin":
+        display_message(
+            "Permission denied: Only superadmin can manage permissions.", "error"
+        )
+        return
+
+    print("\n--- Manage Admin Permissions (Superadmin) ---")
+    user_id = get_input("Enter the ID of the admin user", required=True, input_type=int)
+    if user_id is None:
+        return
+    # Fetch target user
+    user = execute_query(
+        "SELECT username, role, permissions FROM users WHERE user_id = %s",
+        (user_id,),
+        fetch_one=True,
+    )
+    if not user:
+        display_message(f"User with ID {user_id} not found.", "error")
+        return
+    if user.get("role") != "admin":
+        display_message("Permissions can only be managed for admin users.", "error")
+        return
+    # Define available permissions
+    all_perms = [
+        "add_book",
+        "update_book",
+        "delete_book",
+        "add_user",
+        "update_user",
+        "delete_user",
+        "view_reports",
+    ]
+    current = user.get("permissions") or ""
+    display_message(f"Current permissions for '{user['username']}': {current}")
+    display_message(f"Available permissions: {', '.join(all_perms)}")
+    perms_input = get_input(
+        "Enter permissions to assign (comma-separated, leave blank for none)",
+        required=False,
+    )
+    if perms_input is None:
+        return
+    # Parse and validate
+    new_perms = [p.strip() for p in perms_input.split(",") if p.strip()]
+    invalid = [p for p in new_perms if p not in all_perms]
+    if invalid:
+        display_message(f"Invalid permissions: {', '.join(invalid)}", "error")
+        return
+    perms_str = ",".join(new_perms)
+    if confirm_action(f"Set permissions for '{user['username']}' to '{perms_str}'?"):
+        execute_query(
+            "UPDATE users SET permissions = %s WHERE user_id = %s",
+            (perms_str, user_id),
+            commit=True,
+        )
+        display_message(f"Permissions updated for user ID {user_id}.", "success")
+    else:
+        display_message("Permission update cancelled.", "info")
+
+
+def assign_role_permissions(current_user):
+    """Assigns a new role and permissions in one step (Superadmin only)."""
+    # Superadmin Check
+    if current_user["role"] != "superadmin":
+        display_message(
+            "Permission denied: Only superadmin can manage roles and permissions.",
+            "error",
+        )
+        return
+
+    print("\n--- Manage User Role & Permissions (Superadmin) ---")
+    user_id = get_input(
+        "Enter the ID of the user to modify", required=True, input_type=int
+    )
+    if user_id is None:
+        return
+    user = execute_query(
+        "SELECT username, role, permissions FROM users WHERE user_id = %s",
+        (user_id,),
+        fetch_one=True,
+    )
+    if not user:
+        display_message(f"User with ID {user_id} not found.", "error")
+        return
+    if user.get("role") == "superadmin":
+        display_message("Cannot modify superadmin.", "error")
+        return
+    display_message(
+        f"Current role: {user['role']}, permissions: {user.get('permissions') or ''}"
+    )
+    # Select new role
+    new_role = get_input("Enter new role ('reader' or 'admin')", required=True).lower()
+    if new_role not in ["reader", "admin"]:
+        display_message("Invalid role. Must be 'reader' or 'admin'.", "error")
+        return
+    # Select permissions if admin
+    new_perms = ""
+    if new_role == "admin":
+        all_perms = [
+            "add_book",
+            "update_book",
+            "delete_book",
+            "add_user",
+            "update_user",
+            "delete_user",
+            "view_reports",
+        ]
+        display_message(f"Available permissions: {', '.join(all_perms)}")
+        perms_input = get_input(
+            "Enter permissions to assign (comma-separated, leave blank for none)",
+            required=False,
+        )
+        if perms_input is None:
+            return
+        perms = [p.strip() for p in perms_input.split(",") if p.strip()]
+        invalid = [p for p in perms if p not in all_perms]
+        if invalid:
+            display_message(f"Invalid permissions: {', '.join(invalid)}", "error")
+            return
+        new_perms = ",".join(perms)
+    # Confirm and apply
+    if confirm_action(
+        f"Set role to '{new_role}' and permissions to '{new_perms}' for '{user['username']}'?"
+    ):
+        execute_query(
+            "UPDATE users SET role = %s, permissions = %s WHERE user_id = %s",
+            (new_role, new_perms, user_id),
+            commit=True,
+        )
+        display_message(
+            f"User ID {user_id} updated to role '{new_role}' with permissions '{new_perms}'.",
+            "success",
+        )
+    else:
+        display_message("Operation cancelled.", "info")

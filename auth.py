@@ -1,13 +1,8 @@
-"""
-Author: Jason
-E-mail: D23090120503@cityu.edu.mo
-LastEditTime: 2025-04-25 13:33:02
-"""
 
 import bcrypt
 import getpass  # For securely getting password input
 from database import execute_query
-from ui import display_message  
+from ui import display_message
 
 
 def hash_password(password):
@@ -29,18 +24,21 @@ def register_user(
     if not username or not password:
         print("Username and password cannot be empty.")
         return False
-    if role not in ["reader", "admin"]:
+    if role not in ["reader", "admin", "superadmin"]:
         print("Invalid role specified.")
         return False
     # Basic phone validation (optional, can be enhanced)
     if phone and not phone.isdigit():
         print("Warning: Phone number should ideally contain only digits.", "warning")
-        
+
     hashed_pw = hash_password(password)
-    query = "INSERT INTO users (username, password_hash, role, phone) VALUES (%s, %s, %s, %s)"
+    # Initialize permissions as empty string
+    query = "INSERT INTO users (username, password_hash, role, phone, permissions) VALUES (%s, %s, %s, %s, %s)"
     try:
         user_id = execute_query(
-            query, (username, hashed_pw.decode("utf-8"), role, phone), commit=True
+            query,
+            (username, hashed_pw.decode("utf-8"), role, phone, ""),
+            commit=True,  # Add empty string for permissions
         )
         if user_id:
             print(f"User '{username}' registered successfully with ID: {user_id}")
@@ -50,7 +48,7 @@ def register_user(
                 f"Failed to register user '{username}'. Username might already exist."
             )
             return False
-    except Exception as e:  
+    except Exception as e:
         print(f"An error occurred during registration: {e}")
         return False
 
@@ -60,9 +58,8 @@ def login_user():
     username = input("Enter username: ")
     password = getpass.getpass("Enter password: ")  # Hides password input
 
-    query = (
-        "SELECT user_id, username, password_hash, role FROM users WHERE username = %s"
-    )
+    # Fetch permissions along with other user data
+    query = "SELECT user_id, username, password_hash, role, permissions FROM users WHERE username = %s"
     user_data = execute_query(query, (username,), fetch_one=True)
 
     if user_data and verify_password(user_data["password_hash"], password):
@@ -73,6 +70,9 @@ def login_user():
             "user_id": user_data["user_id"],
             "username": user_data["username"],
             "role": user_data["role"],
+            "permissions": user_data.get(
+                "permissions", ""
+            ),  # Ensure permissions key exists
         }
     else:
         return None
@@ -80,7 +80,7 @@ def login_user():
 
 def create_initial_admin():
     """Guides the user through creating the initial 'admin' account."""
-    print("\n--- Create Initial Admin Account ---")
+    print("\n--- Create Initial Superadmin Account ---")
     admin_user = "admin"
     # Check again if admin exists, in case it was created between checks
     admin_exists = execute_query(
@@ -97,17 +97,19 @@ def create_initial_admin():
             continue
         confirm_pass = getpass.getpass("Confirm password: ")
         if password == confirm_pass:
-            # Pass phone=None for initial admin creation
-            if register_user(admin_user, password, "admin", phone=None):
+            # Pass phone=None and empty permissions for initial superadmin creation
+            # Superadmin role implies all permissions, so the permissions string isn't strictly needed for checks,
+            # but we initialize it for consistency.
+            if register_user(admin_user, password, "superadmin", phone=None):
                 display_message(
-                    f"Initial admin user '{admin_user}' created successfully.",
+                    f"Initial superadmin user '{admin_user}' created successfully.",
                     "success",
                 )
                 return True
             else:
                 # register_user already prints an error
                 display_message(
-                    f"Failed to create initial admin user '{admin_user}'.", "error"
+                    f"Failed to create initial superadmin user '{admin_user}'.", "error"
                 )
                 return False
         else:

@@ -1,9 +1,3 @@
-"""
-Author: Jason
-E-mail: D23090120503@cityu.edu.mo
-LastEditTime: 2025-04-25 13:33:46
-"""
-
 import sys
 import operations
 import reports
@@ -73,29 +67,90 @@ def admin_menu(user):
         elif choice == "2":
             operations.list_all_books()
         elif choice == "3":
-            operations.add_book()
+            operations.add_book(user)  # Pass the current user
         elif choice == "4":
-            operations.update_book()
+            operations.update_book(user)
         elif choice == "5":
-            operations.delete_book()
+            operations.delete_book(user)
         elif choice == "6":
-            operations.list_all_loans(only_active=False)
+            operations.list_all_loans(user, only_active=False)  # Pass the current user
         elif choice == "7":
-            operations.list_all_loans(only_active=True)
+            operations.list_all_loans(user, only_active=True)  # Pass the current user
         elif choice == "8":
-            operations.list_users()
+            operations.list_users(user)  # Pass the current user
         elif choice == "9":
-            operations.add_user()
+            operations.add_user(user)
         elif choice == "10":
-            operations.update_user()
+            operations.update_user(user)
         elif choice == "11":
-            operations.delete_user()
+            operations.delete_user(user)
         elif choice == "12":
             reports.display_statistics()
         elif choice == "0":
             display_message("Logging out.", "info")
             break
         elif choice is None:  # Handle Ctrl+C
+            continue
+        else:
+            display_message("Invalid choice, please try again.", "warning")
+
+
+def superadmin_menu(user):
+    """Displays the menu for superadmin users."""
+    options = {
+        # Book Management
+        "1": "Search Books",
+        "2": "List All Books",
+        "3": "Add New Book",
+        "4": "Update Book Details",
+        "5": "Delete Book",
+        # Loan Management
+        "6": "List All Loans (History)",
+        "7": "List Active Loans",
+        # User Management
+        "8": "List Users",
+        "9": "Add New User",
+        "10": "Update User",
+        "11": "Delete User",
+        # Reports
+        "12": "View Statistics",
+        # Role Management
+        "13": "Manage User Roles & Permissions",
+        "0": "Logout",
+    }
+    while True:
+        display_menu(f"Superadmin Menu (User: {user['username']})", options)
+        choice = get_choice()
+        if choice == "1":
+            operations.search_books()
+        elif choice == "2":
+            operations.list_all_books()
+        elif choice == "3":
+            operations.add_book(user)  # Pass the current user
+        elif choice == "4":
+            operations.update_book(user)
+        elif choice == "5":
+            operations.delete_book(user)
+        elif choice == "6":
+            operations.list_all_loans(user, only_active=False)  # Pass the current user
+        elif choice == "7":
+            operations.list_all_loans(user, only_active=True)  # Pass the current user
+        elif choice == "8":
+            operations.list_users(user)  # Pass the current user
+        elif choice == "9":
+            operations.add_user(user)
+        elif choice == "10":
+            operations.update_user(user)
+        elif choice == "11":
+            operations.delete_user(user)
+        elif choice == "12":
+            reports.display_statistics()
+        elif choice == "13":
+            operations.assign_role_permissions(user)  # Pass the current user
+        elif choice == "0":
+            display_message("Logging out.", "info")
+            break
+        elif choice is None:
             continue
         else:
             display_message("Invalid choice, please try again.", "warning")
@@ -118,23 +173,48 @@ def main():
         choice = get_choice()
 
         if choice == "0":
-            break 
+            break
 
         elif choice == "1":
             # Proceed with login attempt
             print("\nPlease login to continue.")
-            user = login_user()
+            user = login_user() # login_user now returns permissions
 
             if user:
-                if user["role"] == "admin":
+                role = user["role"]
+                permissions_str = user.get("permissions", "") # Get permissions string
+
+                print(f"\nLogin successful. Welcome, {user['username']}!")
+                print(f"Your role: {role.capitalize()}")
+
+                # Display specific permissions if they exist
+                if permissions_str:
+                    print("You have the following specific permissions:")
+                    # Assume permissions are comma-separated
+                    permissions_list = [p.strip() for p in permissions_str.split(',') if p.strip()]
+                    if permissions_list:
+                        for perm in permissions_list:
+                            print(f"- {perm.capitalize()}") # Capitalize for display
+                    else:
+                         print("- None specified (using default role permissions).")
+                else:
+                    # Optional: Message if no specific permissions are set
+                    print("No specific permissions assigned; using default role permissions.")
+
+
+                # Call the appropriate menu based on role
+                if role == "superadmin":
+                    superadmin_menu(user)
+                elif role == "admin":
                     admin_menu(user)
-                elif user["role"] == "reader":
+                elif role == "reader":
                     reader_menu(user)
                 else:
                     display_message(
-                        f"Unknown user role: {user['role']}. Logging out.", "error"
+                        f"Unknown user role: {role}. Logging out.", "error"
                     )
             else:
+                # ... (rest of the login failure/admin creation logic remains the same) ...
                 admin_exists = execute_query(
                     "SELECT 1 FROM users WHERE username = %s",
                     ("admin",),

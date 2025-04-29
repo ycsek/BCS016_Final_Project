@@ -1,8 +1,3 @@
-"""
-Author: Jason
-E-mail: D23090120503@cityu.edu.mo
-LastEditTime: 2025-04-25 13:10:40
-"""
 
 from database import execute_query
 from ui import display_message

@@ -1,8 +1,3 @@
-"""
-Author: Jason
-E-mail: D23090120503@cityu.edu.mo
-LastEditTime: 2025-04-25 13:35:42
-"""
 
 from tabulate import tabulate
 import sys

@@ -1,10 +1,3 @@
-/*
- * @Author: Jason
- * @E-mail: D23090120503@cityu.edu.mo
- * @LastEditTime: 2025-04-25 13:35:26
- */
-
-
 CREATE DATABASE IF NOT EXISTS library_db;
 USE library_db;
 
@@ -13,8 +6,9 @@ CREATE TABLE IF NOT EXISTS users (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    role ENUM('reader', 'admin') NOT NULL DEFAULT 'reader',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    role ENUM('reader', 'admin', 'superadmin') NOT NULL DEFAULT 'reader',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    phone VARCHAR(20) NULL
 );
 
 -- Books table: Stores information about each book
@@ -48,3 +42,5 @@ CREATE TABLE IF NOT EXISTS loans (
 );
 
 ALTER TABLE users ADD COLUMN phone VARCHAR(20) NULL AFTER role;
+
+ALTER TABLE users ADD COLUMN permissions TEXT;
