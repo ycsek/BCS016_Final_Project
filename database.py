@@ -15,7 +15,7 @@ def get_db_connection():
     except pymysql.Error as e:
         print(f"Database connection error: {e}", file=sys.stderr)
         # Consider more specific error handling or logging
-        yield None  # Allow the program to potentially continue or handle the None connection
+        yield None  
     finally:
         if connection:
             connection.close()
@@ -64,17 +64,6 @@ def test_connection():
 
 
 if __name__ == "__main__":
-    # Example usage (usually called from other modules)
+    
     if test_connection():
-        # Example: Create tables if they don't exist (run schema manually first ideally)
-        # try:
-        #     with open('schema.sql', 'r') as f:
-        #         sql_script = f.read()
-        #     # pymysql doesn't directly support executing multi-statement scripts easily
-        #     # It's better to run the schema.sql file using a MySQL client
-        #     print("Please ensure the database schema is created using schema.sql")
-        # except FileNotFoundError:
-        #     print("schema.sql not found. Please create the database and tables manually.")
-        # except Exception as e:
-        #     print(f"Error reading schema.sql: {e}")
         pass

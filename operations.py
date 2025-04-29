@@ -373,13 +373,12 @@ def return_book(user_id):
     rows_affected_loan = execute_query(
         return_query, (return_date, loan_id), commit=True
     )
-    # Check success based on no error
 
     display_message(f"Processing return for loan ID {loan_id}...", "info")
 
-    # Update book availability
+
     rows_affected_book = execute_query(update_book_query, (book_id,), commit=True)
-    # Check success based on no error
+
 
     display_message(f"Book (from loan ID {loan_id}) returned successfully.", "success")
 

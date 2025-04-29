@@ -38,7 +38,7 @@ def register_user(
         user_id = execute_query(
             query,
             (username, hashed_pw.decode("utf-8"), role, phone, ""),
-            commit=True,  # Add empty string for permissions
+            commit=True,  
         )
         if user_id:
             print(f"User '{username}' registered successfully with ID: {user_id}")
@@ -98,7 +98,7 @@ def create_initial_admin():
         confirm_pass = getpass.getpass("Confirm password: ")
         if password == confirm_pass:
             # Pass phone=None and empty permissions for initial superadmin creation
-            # Superadmin role implies all permissions, so the permissions string isn't strictly needed for checks,
+            # Superadmin role implies all permissions, so the permissions string isn't strictly needed for checks
             # but we initialize it for consistency.
             if register_user(admin_user, password, "superadmin", phone=None):
                 display_message(

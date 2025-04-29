@@ -67,17 +67,17 @@ def admin_menu(user):
         elif choice == "2":
             operations.list_all_books()
         elif choice == "3":
-            operations.add_book(user)  # Pass the current user
+            operations.add_book(user) 
         elif choice == "4":
             operations.update_book(user)
         elif choice == "5":
             operations.delete_book(user)
         elif choice == "6":
-            operations.list_all_loans(user, only_active=False)  # Pass the current user
+            operations.list_all_loans(user, only_active=False)  
         elif choice == "7":
-            operations.list_all_loans(user, only_active=True)  # Pass the current user
+            operations.list_all_loans(user, only_active=True)  
         elif choice == "8":
-            operations.list_users(user)  # Pass the current user
+            operations.list_users(user)  
         elif choice == "9":
             operations.add_user(user)
         elif choice == "10":
@@ -126,17 +126,17 @@ def superadmin_menu(user):
         elif choice == "2":
             operations.list_all_books()
         elif choice == "3":
-            operations.add_book(user)  # Pass the current user
+            operations.add_book(user)  
         elif choice == "4":
             operations.update_book(user)
         elif choice == "5":
             operations.delete_book(user)
         elif choice == "6":
-            operations.list_all_loans(user, only_active=False)  # Pass the current user
+            operations.list_all_loans(user, only_active=False)  
         elif choice == "7":
-            operations.list_all_loans(user, only_active=True)  # Pass the current user
+            operations.list_all_loans(user, only_active=True)  
         elif choice == "8":
-            operations.list_users(user)  # Pass the current user
+            operations.list_users(user)  
         elif choice == "9":
             operations.add_user(user)
         elif choice == "10":
@@ -146,7 +146,7 @@ def superadmin_menu(user):
         elif choice == "12":
             reports.display_statistics()
         elif choice == "13":
-            operations.assign_role_permissions(user)  # Pass the current user
+            operations.assign_role_permissions(user) 
         elif choice == "0":
             display_message("Logging out.", "info")
             break
@@ -190,7 +190,6 @@ def main():
                 # Display specific permissions if they exist
                 if permissions_str:
                     print("You have the following specific permissions:")
-                    # Assume permissions are comma-separated
                     permissions_list = [p.strip() for p in permissions_str.split(',') if p.strip()]
                     if permissions_list:
                         for perm in permissions_list:
@@ -198,7 +197,6 @@ def main():
                     else:
                          print("- None specified (using default role permissions).")
                 else:
-                    # Optional: Message if no specific permissions are set
                     print("No specific permissions assigned; using default role permissions.")
 
 
@@ -214,7 +212,7 @@ def main():
                         f"Unknown user role: {role}. Logging out.", "error"
                     )
             else:
-                # ... (rest of the login failure/admin creation logic remains the same) ...
+                
                 admin_exists = execute_query(
                     "SELECT 1 FROM users WHERE username = %s",
                     ("admin",),
