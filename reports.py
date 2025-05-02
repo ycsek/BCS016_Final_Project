@@ -1,4 +1,3 @@
-
 from database import execute_query
 from ui import display_message
 import matplotlib.pyplot as plt
@@ -37,7 +36,6 @@ def display_statistics():
         plt.ylabel("Count")
         plt.title("Library Statistics Overview")
 
-        # Add counts on top of bars
         for bar in bars:
             yval = bar.get_height()
             plt.text(

@@ -1,4 +1,3 @@
-
 from database import execute_query
 from ui import get_input, display_table, confirm_action, display_message
 from datetime import date, timedelta
@@ -8,7 +7,7 @@ from auth import register_user
 # --- Permission Helper ---
 def has_permission(user_permissions, required_permission):
     """Checks if the user has the required permission."""
-    # Superadmin implicitly has all permissions (checked in calling function)
+    # Superadmin implicitly has all permissions
     if not user_permissions:  # Handles None or empty string for regular admins
         return False
     perms_list = [p.strip() for p in user_permissions.split(",")]
@@ -133,11 +132,9 @@ def update_book(current_user):
             display_message("Invalid quantity entered. Keeping original.", "warning")
             new_quantity = current_book["quantity"]
 
-    # Calculate change in quantity to adjust available quantity
     quantity_change = new_quantity - current_book["quantity"]
     new_available_quantity = current_book["available_quantity"] + quantity_change
 
-    # Ensure available quantity doesn't exceed total quantity or become negative
     if new_available_quantity < 0:
         display_message(
             "Cannot reduce total quantity below the number of currently loaned books.",
@@ -146,7 +143,7 @@ def update_book(current_user):
         return
     if new_available_quantity > new_quantity:
         new_available_quantity = (
-            new_quantity  # Should not happen with logic above, but safety check
+            new_quantity  
         )
 
     query = """
@@ -211,7 +208,7 @@ def delete_book(current_user):
         query = "DELETE FROM books WHERE book_id = %s"
         # Assuming execute_query handles commit correctly
         execute_query(query, (book_id,), commit=True)
-        # Check if deletion was successful (ideally check row count)
+        # Check if deletion was successful
         check_deleted = execute_query(
             "SELECT 1 FROM books WHERE book_id = %s", (book_id,), fetch_one=True
         )
@@ -315,7 +312,7 @@ def borrow_book(user_id):
         return
 
     loan_date = date.today()
-    due_date = loan_date + timedelta(days=14)  # Example: 2-week loan period
+    due_date = loan_date + timedelta(days=14)  
 
     loan_query = """
         INSERT INTO loans (user_id, book_id, loan_date, due_date)
@@ -337,7 +334,6 @@ def borrow_book(user_id):
         )
     else:
         display_message("Failed to record loan.", "error")
-        # Ideally, rollback the book quantity update if the loan insert failed (needs proper transaction mgmt)
 
 
 def return_book(user_id):
@@ -505,11 +501,11 @@ def add_user(current_user):
     # Get phone number (optional)
     phone = get_input("Enter phone number (optional)", required=False)
     if phone is None and phone != "":
-        return  # User cancelled during phone input
+        return  
 
     register_user(
         username, password, role, phone if phone else None
-    )  # Pass None if empty string
+    )  
 
 
 def list_users(current_user):
@@ -581,7 +577,7 @@ def update_user(current_user):
             "Only superadmin can modify admin or superadmin users.", "error"
         )
         return
-    # Prevent self-modification for non-superadmins (optional, good practice)
+    # Prevent self-modification for non-superadmins (optional)
     if (
         target_user.get("user_id") == current_user.get("user_id")
         and current_user["role"] != "superadmin"
@@ -640,8 +636,8 @@ def update_user(current_user):
         f"Enter new phone (leave blank to keep '{target_user.get('phone') or 'N/A'}')",
         required=False,
     )
-    if phone_input is None and phone_input != "":  # Allow clearing phone
-        return  # User cancelled
+    if phone_input is None and phone_input != "": 
+        return 
     new_phone = phone_input if phone_input is not None else target_user.get("phone")
 
     if confirm_action(f"Update user ID {user_id}?"):

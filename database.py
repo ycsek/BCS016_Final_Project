@@ -1,4 +1,3 @@
-
 import pymysql
 import sys
 from config import DB_CONFIG
@@ -14,7 +13,6 @@ def get_db_connection():
         yield connection
     except pymysql.Error as e:
         print(f"Database connection error: {e}", file=sys.stderr)
-        # Consider more specific error handling or logging
         yield None  
     finally:
         if connection:

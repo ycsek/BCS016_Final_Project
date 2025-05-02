@@ -1,4 +1,3 @@
-
 import pymysql.cursors
 
 DB_CONFIG = {
