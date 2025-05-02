@@ -69,6 +69,7 @@ def display_table(data, headers="firstrow", title=None):
         # Assumes first list is header, rest are data rows
         print(tabulate(data[1:], headers=data[0], tablefmt="grid"))
     else:
+        # Fallback for simple lists or pre-formatted data
         print(tabulate(data, headers=headers, tablefmt="grid"))
 
 

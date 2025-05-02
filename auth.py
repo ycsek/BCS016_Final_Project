@@ -27,7 +27,7 @@ def register_user(
     if role not in ["reader", "admin", "superadmin"]:
         print("Invalid role specified.")
         return False
-    # Basic phone validation (optional)
+    # Basic phone validation (optional, can be enhanced)
     if phone and not phone.isdigit():
         print("Warning: Phone number should ideally contain only digits.", "warning")
 
@@ -82,6 +82,7 @@ def create_initial_admin():
     """Guides the user through creating the initial 'admin' account."""
     print("\n--- Create Initial Superadmin Account ---")
     admin_user = "admin"
+    # Check again if admin exists, in case it was created between checks
     admin_exists = execute_query(
         "SELECT 1 FROM users WHERE username = %s", (admin_user,), fetch_one=True
     )
@@ -96,7 +97,9 @@ def create_initial_admin():
             continue
         confirm_pass = getpass.getpass("Confirm password: ")
         if password == confirm_pass:
+            # Pass phone=None and empty permissions for initial superadmin creation
             # Superadmin role implies all permissions, so the permissions string isn't strictly needed for checks
+            # but we initialize it for consistency.
             if register_user(admin_user, password, "superadmin", phone=None):
                 display_message(
                     f"Initial superadmin user '{admin_user}' created successfully.",
@@ -104,6 +107,7 @@ def create_initial_admin():
                 )
                 return True
             else:
+                # register_user already prints an error
                 display_message(
                     f"Failed to create initial superadmin user '{admin_user}'.", "error"
                 )

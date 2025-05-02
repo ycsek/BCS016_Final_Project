@@ -32,7 +32,7 @@ def reader_menu(user):
         elif choice == "0":
             display_message("Logging out.", "info")
             break
-        elif choice is None: 
+        elif choice is None:  # Handle Ctrl+C in get_choice
             continue
         else:
             display_message("Invalid choice, please try again.", "warning")
@@ -89,7 +89,7 @@ def admin_menu(user):
         elif choice == "0":
             display_message("Logging out.", "info")
             break
-        elif choice is None:  
+        elif choice is None:  # Handle Ctrl+C
             continue
         else:
             display_message("Invalid choice, please try again.", "warning")
@@ -178,11 +178,11 @@ def main():
         elif choice == "1":
             # Proceed with login attempt
             print("\nPlease login to continue.")
-            user = login_user() 
+            user = login_user() # login_user now returns permissions
 
             if user:
                 role = user["role"]
-                permissions_str = user.get("permissions", "") # Get permissions
+                permissions_str = user.get("permissions", "") # Get permissions string
 
                 print(f"\nLogin successful. Welcome, {user['username']}!")
                 print(f"Your role: {role.capitalize()}")
@@ -193,12 +193,14 @@ def main():
                     permissions_list = [p.strip() for p in permissions_str.split(',') if p.strip()]
                     if permissions_list:
                         for perm in permissions_list:
-                            print(f"- {perm.capitalize()}") 
+                            print(f"- {perm.capitalize()}") # Capitalize for display
                     else:
                          print("- None specified (using default role permissions).")
                 else:
                     print("No specific permissions assigned; using default role permissions.")
 
+
+                # Call the appropriate menu based on role
                 if role == "superadmin":
                     superadmin_menu(user)
                 elif role == "admin":
@@ -218,6 +220,7 @@ def main():
                 )
 
                 if not admin_exists:
+                    # Admin doesn't exist, offer to create
                     create = get_choice(
                         "Login failed. Initial admin user not found. Create it now? (yes/no): "
                     ).lower()
@@ -228,22 +231,23 @@ def main():
                             )
                         else:
                             display_message("Admin creation failed. Exiting.", "error")
-                            break  
-                        continue 
+                            break  # Exit if creation failed
+                        continue  # Go back to login prompt
                     else:
                         display_message(
                             "Cannot proceed without admin account. Exiting.", "info"
                         )
-                        break
+                        break  # Exit if user declines creation
                 else:
+                    # Admin exists, login just failed for other reasons
                     display_message("Invalid username or password.", "error")
                     retry = get_choice("Try again? (yes/no): ").lower()
                     if retry != "yes":
-                        break  
-
+                        break  # Exit the main loop if user doesn't want to retry
+                    # If retry is 'yes', the loop continues naturally
         else:
             display_message("Invalid choice, please try again.", "warning")
-
+            # The loop continues to show the login/exit menu again
 
     print("\nThank you for using the Library Management System. Goodbye!")
 

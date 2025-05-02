@@ -9,7 +9,7 @@ from auth import register_user
 def has_permission(user_permissions, required_permission):
     """Checks if the user has the required permission."""
     # Superadmin implicitly has all permissions (checked in calling function)
-    if not user_permissions: 
+    if not user_permissions:  # Handles None or empty string for regular admins
         return False
     perms_list = [p.strip() for p in user_permissions.split(",")]
     return required_permission in perms_list
@@ -30,7 +30,7 @@ def add_book(current_user):
     print("\n--- Add New Book ---")
     title = get_input("Enter title", required=True)
     if title is None:
-        return  
+        return  # User cancelled
     author = get_input("Enter author", required=True)
     if author is None:
         return
@@ -146,7 +146,7 @@ def update_book(current_user):
         return
     if new_available_quantity > new_quantity:
         new_available_quantity = (
-            new_quantity 
+            new_quantity  # Should not happen with logic above, but safety check
         )
 
     query = """
@@ -315,7 +315,7 @@ def borrow_book(user_id):
         return
 
     loan_date = date.today()
-    due_date = loan_date + timedelta(days=14)  
+    due_date = loan_date + timedelta(days=14)  # Example: 2-week loan period
 
     loan_query = """
         INSERT INTO loans (user_id, book_id, loan_date, due_date)
@@ -337,7 +337,7 @@ def borrow_book(user_id):
         )
     else:
         display_message("Failed to record loan.", "error")
-
+        # Ideally, rollback the book quantity update if the loan insert failed (needs proper transaction mgmt)
 
 
 def return_book(user_id):
@@ -505,11 +505,11 @@ def add_user(current_user):
     # Get phone number (optional)
     phone = get_input("Enter phone number (optional)", required=False)
     if phone is None and phone != "":
-        return  
+        return  # User cancelled during phone input
 
     register_user(
         username, password, role, phone if phone else None
-    )  
+    )  # Pass None if empty string
 
 
 def list_users(current_user):
@@ -581,7 +581,7 @@ def update_user(current_user):
             "Only superadmin can modify admin or superadmin users.", "error"
         )
         return
-    # Prevent self-modification for non-superadmins (optional)
+    # Prevent self-modification for non-superadmins (optional, good practice)
     if (
         target_user.get("user_id") == current_user.get("user_id")
         and current_user["role"] != "superadmin"
@@ -592,10 +592,10 @@ def update_user(current_user):
         return
 
     display_message("Current details:")
-    # Display permissions
+    # Display permissions as well
     display_table(
         [{k: v for k, v in target_user.items() if k != "permissions"}]
-    ) 
+    )  # Hide raw permissions string initially
     display_message(f"Current permissions: {target_user.get('permissions') or 'None'}")
 
     username = (
@@ -623,7 +623,7 @@ def update_user(current_user):
                 return
     elif (
         target_user["role"] != "reader"
-    ):  # Non-superadmin can't change role of non-readers
+    ):  # Non-superadmin cannot change role of non-readers
         display_message("Only superadmin can change admin roles.", "error")
         return
 
@@ -640,8 +640,8 @@ def update_user(current_user):
         f"Enter new phone (leave blank to keep '{target_user.get('phone') or 'N/A'}')",
         required=False,
     )
-    if phone_input is None and phone_input != "": 
-        return 
+    if phone_input is None and phone_input != "":  # Allow clearing phone
+        return  # User cancelled
     new_phone = phone_input if phone_input is not None else target_user.get("phone")
 
     if confirm_action(f"Update user ID {user_id}?"):
@@ -781,7 +781,7 @@ def assign_role(current_user):
                 new_role,
                 "",
                 user_id,
-            ), 
+            ),  # Always clear permissions on role change via this function
             commit=True,
         )
         display_message(

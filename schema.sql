@@ -1,7 +1,7 @@
 CREATE DATABASE IF NOT EXISTS library_db;
 USE library_db;
 
--- Users table
+-- Users table: Stores user credentials and roles
 CREATE TABLE IF NOT EXISTS users (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
     phone VARCHAR(20) NULL
 );
 
--- Books table
+-- Books table: Stores information about each book
 CREATE TABLE IF NOT EXISTS books (
     book_id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
@@ -25,14 +25,14 @@ CREATE TABLE IF NOT EXISTS books (
     INDEX(isbn)
 );
 
--- Loans table
+-- Loans table: Tracks books borrowed by users
 CREATE TABLE IF NOT EXISTS loans (
     loan_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     book_id INT NOT NULL,
     loan_date DATE NOT NULL,
     due_date DATE NOT NULL,
-    return_date DATE NULL, 
+    return_date DATE NULL, -- NULL means the book is still borrowed
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (book_id) REFERENCES books(book_id) ON DELETE CASCADE,
     INDEX(user_id),
